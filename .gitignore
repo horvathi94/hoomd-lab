@@ -1,6 +1,7 @@
 simulations/*
 comments.md
 
+__pycache__
 *.yaml
 *.txt
 *.ipynb

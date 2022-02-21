@@ -30,6 +30,8 @@ def test(args: list) -> None:
 
 def main(args: list) -> None:
 
+    print(args)
+    return
     if args[0] == "continue":
         continue_run(args[1:])
         return

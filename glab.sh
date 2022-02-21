@@ -1,34 +1,104 @@
 #!/bin/bash
 
-#### Fresh 
-# $1 - Filename
-# $2 - Project
-# $3 - GPU
-
-#### Continue
-# $1 - continue
-# $2 - Filename
-# $3 - GPU
+GPU_COUNT=6
+FREE_GPUS=()
+GPU_USAGES=()
 
 
-# Create temp file
-tempfile=$(date "+%Y%m%d_%H%M_%S").tmp
-args="$@"
+
+if [[ $1 == "--help" ]] || [[ $1 == "-h" ]]; then
+	echo Main command to run HOOMD simulations.
+	echo
+	echo Usage: ./glab.sh [command]
+	echo 
+	echo Commands:
+	echo  - check	Check GPU usage
+	echo  - run		Run simulation
+fi
 
 
-# Check gpu usage:
-GPU=$3
-usage=$(nvidia-smi --id=$GPU --query-gpu='utilization.gpu' --format='csv,noheader,nounits')
+function check_gpus() {
+	
+	if [[ $1 == "--help" ]] || [[ $1 == "-h" ]]; then
+		echo Check status of GPUs.
+		echo 
+		echo Usage: ./glab.sh check [commnad]
+		echo 
+		echo Commands:
+		echo  - all			 	List all info
+		echo  - finished	List finsihed tasks
+	fi
 
-#if [ $usage -gt 0 ]; then
-#	echo "GPU: $GPU is already working, usage ($usage%). Exiting..."
-#	exit 1
-#fi
 
-echo "Doing sim on GPU: $GPU"
+	IFS="," read -ra current_files < ./current_files.txt
 
 
-# Run simulation
-docker exec -i \
-	hoomd_glotzerlab_1 \
-	bash -c "python3 new/main.py $args" #> $tempfile
+	if [[ $1 == "all" ]]; then
+
+		for (( i=0; i<GPU_COUNT; i++ ));
+		do 
+			echo GPU $i usage: ${GPU_USAGES[$i]}, working on: `basename ${current_files[$i]}`
+		done
+	
+	fi
+
+
+	if [ $1 == "finished" ]; then
+
+		for (( i=0; i<GPU_COUNT; i++ ));
+		do
+			if [[ "${GPU_USAGES[$i]}" -eq 0 ]]; then
+				echo GPU $i finished: `basename ${current_files[$i]}`
+			fi
+		done;
+
+	fi
+
+}
+
+
+# --- Verify GPUs
+for gpu in $(seq 0 $(($GPU_COUNT-1)))
+do 
+	u=$(nvidia-smi --id=$gpu --query-gpu="utilization.gpu" --format="csv,noheader,nounits")
+	GPU_USAGES+=( $u )
+	if [ $u -eq 0 ]; then
+		FREE_GPUS+=( $gpu )
+	fi
+done
+
+
+if [[ $1 == "check" ]]; then
+	shift;
+	check_gpus "$@";
+	exit 0
+fi
+
+
+if [[ $1 == "run" ]]; then
+
+	shift 1
+	if [ $# -ne 1 ]; then
+		echo Invalid usage of command, please reference --help.
+		exit 10
+	fi
+
+	if [ "${#FREE_GPUS[@]}" -eq 0 ]; then
+		echo There is no GPU available to carry out computations.
+		exit 1
+	fi
+
+	gpu="${FREE_GPUS[0]}"
+	echo Will use GPU: $gpu
+
+
+	docker exec -i \
+		hoomd_glotzerlab_1 \
+		bash -c "python3 new/main.py $1 $gpu"
+
+	exit 0
+
+fi
+
+echo "Command $1 not recognized. Type --help for help."
+exit 100

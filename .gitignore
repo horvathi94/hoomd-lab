@@ -1,0 +1,6 @@
+simulations/*
+comments.md
+
+*.yaml
+*.txt
+*.ipynb

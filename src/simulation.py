@@ -6,6 +6,7 @@ from .rigidbody import RigidBody
 from .particle import Particle
 from .interaction import Interaction
 from .box import Box
+from .yaml_keys import SimType
 
 
 @dataclass
@@ -23,6 +24,8 @@ class Simulation:
     interactions: List[Interaction] = field(default_factory=lambda: [])
     timestamp: str = None
     start_from: int = 0
+    simtype: SimType = None
+    base: dict = None
 
 
     def __post_init__(self):
@@ -33,6 +36,14 @@ class Simulation:
     def __eq__(self, other: RigidBody):
         if self.label != other.label: return False
         return True
+
+
+    def set_frame(self, frame_index: int) -> None:
+        if frame_index == -1:
+            self.start_from = (self.duration / self.period) - 1
+        if frame_index > self.duration / self.period:
+            raise Exception("Frame is out of bounds.")
+        self.start_from = frame_index
 
 
     def extend_duration(self, dur: int) -> None:
@@ -175,3 +186,9 @@ class Simulation:
     @property
     def trajectory_file(self) -> str:
         return os.path.join(self.path, self.trajectory_filename)
+
+
+    def fork_data(self) -> dict:
+        if self.simtype is not SimType.FORK: return None
+        return {"forked_from": {"file": self.base["file"],
+                                "frame": self.base["frame"]}}

@@ -1,6 +1,7 @@
 simulations/*
 comments.md
 
+*.bak
 __pycache__
 *.yaml
 *.txt

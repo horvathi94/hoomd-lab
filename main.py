@@ -1,9 +1,9 @@
 import sys
-from src.parser import Parser, ContParser
+from src.parser import Parser
 from src import run
 from src import run_continue
 
-
+"""
 def runmd(args: list) -> None:
     filename, project, gpu = args
     parser = Parser(filename, project)
@@ -18,17 +18,14 @@ def continue_run(args: list) -> None:
     sim = parser.read_simulation()
     run_continue.run(sim, int(gpu))
 
-
+"""
 
 def test(args: list) -> None:
+    print(f"\nRunning test....")
     filename = args[0]
-    parser = Parser(filename, "test")
-    sim = parser.read()
-    for rbdata in sim.rigidbodies:
-        rb = rbdata["rb"]
-        print(rb.label)
-        print(rb)
-        print("-"*80)
+    parser = Parser(filename)
+    print(parser)
+
 
 
 def main(args: list) -> None:

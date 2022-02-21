@@ -191,4 +191,19 @@ class Simulation:
     def fork_data(self) -> dict:
         if self.simtype is not SimType.FORK: return None
         return {"forked_from": {"file": self.base["file"],
-                                "frame": self.base["frame"]}}
+                                "frame": self.start_from}}
+
+
+    def is_run(self) -> bool:
+        if self.simtype == SimType.RUN: return True
+        return False
+
+
+    def is_continue(self) -> bool:
+        if self.simtype == SimType.CONTINUE: return True
+        return False
+
+
+    def is_fork(self) -> bool:
+        if self.simtype == SimType.FORK: return True
+        return False

@@ -38,10 +38,14 @@ class Parser:
 
 
     def read_file(self) -> dict:
-        yamlf = os.path.join(self.abs_path, self.filename)
-        with open(yamlf, "r") as f:
+        with open(self.abs_file, "r") as f:
             data = yaml.safe_load(f)
         return data
+
+
+    @property
+    def abs_file(self) -> str:
+        return os.path.join(self.abs_path, self.filename)
 
 
     def get_simulation_type(self) -> ykeys.SimType:
@@ -151,6 +155,7 @@ class Parser:
         self.rigidbodies = self.read_rigidbodies()
         self.interactions = self.read_interactions()
         self.simulation = self.read_simulation()
+        self.simulation.simtype = ykeys.SimType.RUN
 
 
     def read_base_info(self) -> dict:
@@ -164,7 +169,7 @@ class Parser:
 
 
     @classmethod
-    def _read_base(self, fname: str) -> any:
+    def _read_base(self, fname: str) -> "Parser":
         return Parser(fname,
                       abs_path="/hoomd-examples/workdir/new/simulations/")
 
@@ -179,7 +184,9 @@ class Parser:
         self.rigidbodies = base.rigidbodies
         self.interactions = base.interactions
         self.simulation = base.simulation
+        self.simulation.project = self.project_name
         self.simulation.set_frame(base_info["frame_index"])
+        self.simulation.base["file"] = base.abs_file
         if ykeys.Key.SIMULATION.value not in self.data:
             raise Exception("Missing simulation info.")
         raw = self.data[ykeys.Key.SIMULATION.value]
@@ -187,6 +194,7 @@ class Parser:
             raise Exception("Duration is missing.")
         else:
             self.simulation.extend_duration(int(float(raw["duration"])))
+        self.simulation.simtype = ykeys.SimType.CONTINUE
         self.simulation.project_filename = base_info["file"]
 
 
@@ -202,6 +210,7 @@ class Parser:
         self.rigidbodies = base.rigidbodies
         self.interactions = base.interactions
         self.simulation = base.simulation
+        self.simulation.project = self.project_name
         self.simulation.set_frame(base_info["frame_index"])
         if ykeys.Key.SIMULATION.value not in self.data:
             raise Exception("Missing simulation info.")
@@ -212,21 +221,22 @@ class Parser:
             self.simulation.duration = int(float(raw["duration"]))
         if "kT" in raw: self.simulation.kT = raw["kT"]
         if "dt" in raw: self.simulation.dt = raw["dt"]
-        self.simulation.action = ykeys.SimType.FORK
+        self.simulation.simtype = ykeys.SimType.FORK
         self.simulation.base = base_info
+        self.simulation.base["file"] = base.abs_file
 
 
     @staticmethod
     def write(sim: Simulation, file: str) -> None:
-        particles = {ykeys.Keys.PARTICLES.value:
+        particles = {ykeys.Key.PARTICLES.value:
                      [p.as_dict() for p in sim.list_unique_particles()]}
-        rigidbodies = {ykeys.Keys.RIGIDBODIES.value:
+        rigidbodies = {ykeys.Key.RIGIDBODIES.value:
                        [rb.as_dict() for rb in sim.list_unique_rigidbodies()]}
-        box = {ykeys.Keys.BOX.value: sim.box.as_dict()}
-        interactions = {ykeys.Keys.INTERACTIONS.value:
+        box = {ykeys.Key.BOX.value: sim.box.as_dict()}
+        interactions = {ykeys.Key.INTERACTIONS.value:
                         [i.as_dict() for i in sim.interactions]}
-        simulation = {ykeys.Keys.SIMULATION.value: sim.as_dict()}
-        project_name = {ykeys.Keys.PROJECT_NAME: sim.project}
+        simulation = {ykeys.Key.SIMULATION.value: sim.as_dict()}
+        project_name = {ykeys.Key.PROJECT_NAME.value: sim.project}
 
         with open(file, "w") as f:
             doc = yaml.dump(project_name, f)
@@ -235,5 +245,5 @@ class Parser:
             doc = yaml.dump(box, f)
             doc = yaml.dump(interactions, f, sort_keys=False)
             doc = yaml.dump(simulation, f)
-            if simulation.simtype is ykeys.SimType.FORK:
-                doc = yaml.dump(simulation.fork_data(), f)
+            if sim.simtype is ykeys.SimType.FORK:
+                doc = yaml.dump(sim.fork_data(), f)

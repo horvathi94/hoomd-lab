@@ -1,22 +1,16 @@
 import numpy as np
 import hoomd
 import hoomd.md
-import gsd.hoomd
-import utils
 import datetime
+from . import utils
 from .simulation import Simulation
 from .parser import Parser
 from . import log
 
 
-def is_center(label: str, center_particles: list) -> bool:
-    for p in center_particles:
-        if p.label == label: return True
-    return False
+def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
 
-
-def run(sim: Simulation, gpu: int, overwrite: bool=False) -> None:
-
+    sim.mint()
     Parser.write(sim, sim.project_file)
     log.log_current_file(sim.project_file, gpu)
 
@@ -25,37 +19,26 @@ def run(sim: Simulation, gpu: int, overwrite: bool=False) -> None:
     hoomd.context.initialize(f"--gpu={gpu}")
 
 
-    # Read previous structure
-    trajectory = gsd.hoomd.open(sim.trajectory_file)
-    last_index = len(trajectory) - 1
-    struct0 = trajectory.read_frame(last_index)
-
-    N = struct0.particles.N
-    Lx, Ly, Lz, *_ = struct0.configuration.box
-    center_particles = sim.unique_center_particles()
-
-
-    N = 0
-    for i in range(struct0.particles.N):
-        label = struct0.particles.types[struct0.particles.typeid[i]]
-        if is_center(label, center_particles): N += 1
-
-
     # Create snapshot
     box = hoomd.data.boxdim(Lx=sim.box.Lx, Ly=sim.box.Ly, Lz=sim.box.Lz)
-    snapshot = hoomd.data.make_snapshot(N=N, box=box)
+    snapshot = hoomd.data.make_snapshot(N=sim.count_center_particles(),
+                                        box=box)
 
-    snapshot.particles.types = struct0.particles.types
-    for i in range(struct0.particles.N):
-        label = struct0.particles.types[struct0.particles.typeid[i]]
-        if not is_center(label, center_particles): continue
-        snapshot.particles.typeid[i] = struct0.particles.typeid[i]
-        snapshot.particles.position[i] = struct0.particles.position[i]
-        snapshot.particles.charge[i] = struct0.particles.charge[i]
-        snapshot.particles.diameter[i] = struct0.particles.diameter[i]
-        snapshot.particles.orientation[i] = struct0.particles.orientation[i]
-        snapshot.particles.moment_inertia[i] = \
-            struct0.particles.moment_inertia[i]
+    types_list = [p.label for p in sim.list_unique_particles()]
+    snapshot.particles.types = types_list
+
+
+    # --- Add particles:
+    for i, rb in enumerate(sim.list_rigidbodies()):
+        p = rb.get_center()
+        snapshot.particles.typeid[i] = types_list.index(p.label)
+        snapshot.particles.charge[i] = p.q
+        snapshot.particles.orientation[i] = utils.random_quaternion()
+        snapshot.particles.diameter[i] = p.diam
+        snapshot.particles.moment_inertia[i] = rb.moment_of_inertia
+        utils.place_particle(snapshot, i,
+                             fixed_position=rb.fixed_position, dmin=4.)
+
 
 
     # Init system

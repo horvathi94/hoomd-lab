@@ -1,44 +1,42 @@
 import sys
 from src.parser import Parser
-from src import run
-from src import run_continue
-
-"""
-def runmd(args: list) -> None:
-    filename, project, gpu = args
-    parser = Parser(filename, project)
-    sim = parser.read()
-    run.run(sim, int(gpu))
+from src import md_run
+from src import md_continue
+from src import md_fork
+from src.simulation import Simulation
 
 
-def continue_run(args: list) -> None:
+def run(sim: Simulation, gpu: int) -> None:
+    print(f"Running sim project: {sim.project} on GPU {gpu}")
+    md_run.run(sim, gpu)
 
-    filename, gpu = args
-    parser = ContParser(filename)
-    sim = parser.read_simulation()
-    run_continue.run(sim, int(gpu))
 
-"""
+def continue_run(sim: Simulation, gpu: int) -> None:
+    print(f"Continuing sim project: {sim.project} on GPU {gpu}")
+    md_continue.run(sim, gpu)
 
-def test(args: list) -> None:
-    print(f"\nRunning test....")
-    filename = args[0]
-    parser = Parser(filename)
-    print(parser)
+
+def fork_run(sim: Simulation, gpu: int) -> None:
+    print(f"Forking sim project: {sim.project} on GPU {gpu}")
+    md_fork.run(sim, gpu)
 
 
 
 def main(args: list) -> None:
 
-    print(args)
-    return
-    if args[0] == "continue":
-        continue_run(args[1:])
+    fname = str(args[0])
+    gpu = int(args[1])
+    parser = Parser(fname)
+    if parser.simulation.is_run():
+        run(parser.simulation, gpu)
         return
-    if args[0] == "test":
-        test(args[1:])
+    if parser.simulation.is_continue():
+        continue_run(parser.simulation, gpu)
         return
-    runmd(args)
+    if parser.simulation.is_fork():
+        fork_run(parser.simulation, gpu)
+        return
+
 
 
 if __name__ == "__main__":

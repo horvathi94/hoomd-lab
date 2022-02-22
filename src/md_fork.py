@@ -26,11 +26,8 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
     hoomd.context.initialize(f"--gpu={gpu}")
 
     # Read previous structure
-    trajectory = gsd.hoomd.open(sim.trajectory_file)
-    print(sim.frame)
-    return
-#    last_index = len(trajectory) - 1
-    struct0 = trajectory.read_frame(last_index)
+    trajectory = gsd.hoomd.open(sim.base_trajectory)
+    struct0 = trajectory.read_frame(sim.start_from)
 
     N = struct0.particles.N
     Lx, Ly, Lz, *_ = struct0.configuration.box

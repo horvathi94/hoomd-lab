@@ -40,7 +40,7 @@ class Simulation:
 
     def set_frame(self, frame_index: int) -> None:
         if frame_index == -1:
-            self.start_from = (self.duration / self.period) - 1
+            frame_index = (self.duration / self.period) - 1
         if frame_index > self.duration / self.period:
             raise Exception("Frame is out of bounds.")
         self.start_from = frame_index
@@ -192,6 +192,12 @@ class Simulation:
         if self.simtype is not SimType.FORK: return None
         return {"forked_from": {"file": self.base["file"],
                                 "frame": self.start_from}}
+
+
+    @property
+    def base_trajectory(self) -> str:
+        if self.base is None: return None
+        return self.base["file"].replace(".yaml", ".gsd")
 
 
     def is_run(self) -> bool:

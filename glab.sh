@@ -32,18 +32,28 @@ function check_gpus() {
 
 	IFS="," read -ra current_files < ./current_files.txt
 
+	if [[ $# -eq 0 ]]; then
+		task="all"
+	else
+		task=$1
+	fi
 
-	if [[ $1 == "all" ]]; then
+
+	if [[ $task == "all" ]]; then
 
 		for (( i=0; i<GPU_COUNT; i++ ));
-		do 
-			echo GPU $i usage: ${GPU_USAGES[$i]}, working on: `basename ${current_files[$i]}`
+		do
+			if [ "${GPU_USAGES[$i]}" == 0 ]; then
+				echo GPU $i usage: ${GPU_USAGES[$i]}%, finished: `basename ${current_files[$i]}`
+			else 
+				echo GPU $i usage: ${GPU_USAGES[$i]}%, working on: `basename ${current_files[$i]}`
+			fi
 		done
 	
 	fi
 
 
-	if [ $1 == "finished" ]; then
+	if [[ $task == "finished" ]]; then
 
 		for (( i=0; i<GPU_COUNT; i++ ));
 		do

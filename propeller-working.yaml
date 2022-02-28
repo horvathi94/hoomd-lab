@@ -1,0 +1,103 @@
+project_name: propeller-double
+particles:
+- A:
+    diam: 1
+    m: 1
+    q: 12
+- B:
+    diam: 1
+    m: 1
+    q: 0
+- D:
+    diam: 1
+    m: 1
+    q: 0
+- C:
+    diam: 1
+    m: 1
+    q: -2
+rigidbodies:
+- V:
+  - A:
+      is_center: true
+      position: [0, 0, 0]
+  - B:
+      is_center: false
+      position: [-1, 0, 0]
+  - B:
+      is_center: false
+      position: [1, 0, 0]
+- H:
+  - D:
+      is_center: true
+      position: [0, 0, 0]
+  - C:
+      is_center: false
+      position: [0.0, 0.0, -1.5]
+  - C:
+      is_center: false
+      position: [0.0, 0.0, 1.5]
+box:
+  Lx: 30
+  Ly: 30
+  Lz: 30
+interactions:
+- A:
+    with: A
+    epsilon: 0.0
+    sigma: 1.0
+    alpha: 0.0
+- A:
+    with: B
+    epsilon: 1000000.0
+    sigma: 1.0
+    alpha: 0.0
+- A:
+    with: C
+    epsilon: 1.0
+    sigma: 1.0
+    alpha: 0.0
+- A:
+    with: D
+    epsilon: 100000.0
+    sigma: 1.0
+    alpha: 0.0
+- B:
+    with: B
+    epsilon: 100000.0
+    sigma: 1.0
+    alpha: 0.0
+- B:
+    with: C
+    epsilon: 10.0
+    sigma: 1.0
+    alpha: 0.0
+- B:
+    with: D
+    epsilon: 1000000.0
+    sigma: 1.0
+    alpha: 0.0
+- C:
+    with: C
+    epsilon: 0.0
+    sigma: 1.0
+    alpha: 0.0
+- C:
+    with: D
+    epsilon: 100000.0
+    sigma: 1.0
+    alpha: 0.0
+- D:
+    with: D
+    epsilon: 100000.0
+    sigma: 1.0
+    alpha: 0.0
+simulation:
+  dt: 0.01
+  duration: 50000000.0
+  kT: 0.07
+  period: 100000.0
+  rigidbodies:
+  - V: 7
+  - H: 21
+  seed: 42

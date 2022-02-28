@@ -186,7 +186,7 @@ class Parser:
         self.simulation = base.simulation
         self.simulation.project = self.project_name
         self.simulation.set_frame(base_info["frame_index"])
-        self.simulation.base["file"] = base.abs_file
+#        self.simulation.base["file"] = base.abs_file
         if ykeys.Key.SIMULATION.value not in self.data:
             raise Exception("Missing simulation info.")
         raw = self.data[ykeys.Key.SIMULATION.value]

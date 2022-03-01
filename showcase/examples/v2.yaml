@@ -1,9 +1,20 @@
+# Run a fresh MD simulation
+
+
+# Specify project name
 project_name: test-v2
 
 
+# Particles in the system
+# Default values: 
+#   - mass: 1
+#   - charge: 0
+#   - diameter: 1
 particles:
   - A:
       q: 18
+      diam: 1
+      m: 1
   - B:
       q: 0
   - C:
@@ -12,6 +23,9 @@ particles:
       q: 0
 
 
+# Rigid bodies in the system
+# Default values:]
+#   - is_center: false
 rigidbodies:
   - V:
     - A:
@@ -31,12 +45,15 @@ rigidbodies:
         position: [0, 0, 1.5]
 
 
+# Simulation box
 box:
   Lx: 30
   Ly: 30
   Lz: 30
 
 
+# Interaction between particles
+# Specify for all possible combinations of particles
 interactions:
   - A: 
       with: [A]
@@ -90,13 +107,15 @@ interactions:
       alpha: 0
 
 
-
+# Simulation parameters
 simulation:
+
+  # Rigid bodies in the simulation and their number
   rigidbodies:
     - V: 7
     - H: 21
   kT: 0.05
   dt: 0.01
-  seed: 42
+  seed: 42    # Simulation random seed
   period: 1e3
   duration: 1e4

@@ -44,11 +44,10 @@ class Simulation:
             frame_index = (self.duration / self.period) - 1
         if frame_index > self.duration / self.period:
             raise Exception("Frame is out of bounds.")
-        self.start_from = frame_index
+        self.start_from = int(frame_index)
 
 
     def extend_duration(self, dur: int) -> None:
-        self.start_from = self.duration
         self.duration += dur
 
 
@@ -168,6 +167,11 @@ class Simulation:
 
     def mint(self) -> None:
         self.timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+    def try_minting(self) -> None:
+        if self.simtype is SimType.RUN or self.simtype is SimType.FORK:
+            self.mint()
 
 
     @property

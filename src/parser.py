@@ -253,5 +253,5 @@ class Parser:
             doc = yaml.dump(box, f)
             doc = yaml.dump(interactions, f, sort_keys=False)
             doc = yaml.dump(simulation, f)
-            if sim.simtype is ykeys.SimType.FORK:
+            if sim.is_fork():
                 doc = yaml.dump(sim.fork_data(), f)

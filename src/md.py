@@ -1,16 +1,17 @@
 import numpy as np
 import hoomd
 import hoomd.md
-import datetime
-from . import utils
 from .simulation import Simulation
-from .parser import Parser
 from . import log
+from . import utils
+from .yaml_keys import SimType
+from .snapshot import create_snapshot
 
 
-def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
+def mdrun(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
 
-    sim.mint()
+    # Write logs
+    sim.try_minting()
     Parser.write(sim, sim.project_file)
     log.log_current_file(sim.project_file, gpu)
 
@@ -20,41 +21,16 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
     hoomd.context.initialize(f"--gpu={gpu}")
 
 
-    # Create snapshot
-    box = hoomd.data.boxdim(Lx=sim.box.Lx, Ly=sim.box.Ly, Lz=sim.box.Lz)
-    snapshot = hoomd.data.make_snapshot(N=sim.N, box=box)
-    snapshot.particles.types = sim.types_list
-
-
-    # --- Add particles:
-    for i, rb in enumerate(sim.list_rigidbodies()):
-        p = rb.get_center()
-        snapshot.particles.typeid[i] = sim.types_list.index(p.label)
-        snapshot.particles.charge[i] = p.q
-        snapshot.particles.orientation[i] = utils.random_quaternion()
-        snapshot.particles.diameter[i] = p.diam
-        snapshot.particles.moment_inertia[i] = rb.moment_of_inertia
-        utils.place_particle(snapshot, i,
-                             fixed_position=rb.fixed_position, dmin=4.)
-
-
-    # --- Add solvent:
-    for j, sol in enumerate(sim.list_solvents()):
-        indx = i + j + 1
-        snapshot.particles.typeid[indx] = sim.types_list.index(sol.label)
-        snapshot.particles.charge[i] = sol.q
-        snapshot.particles.orientation[i] = utils.random_quaternion()
-        snapshot.particles.diameter[i] = sol.diam
-        snapshot.particles.moment_inertia[i] = [1, 1, 1]
-        utils.place_particle(snapshot, indx, dmin=4.)
+    # Create starting snapshot
+    snapshot = create_snapshot(sim)
 
 
     # Init system
     hoomd_sys = hoomd.init.read_snapshot(snapshot)
+
+
+    # Create rigid bodies
     rigid = hoomd.md.constrain.rigid()
-
-    # --- Rigid bodies
-
     for rbdata in sim.rigidbodies:
         rb = rbdata["rb"]
         center_label = rb.get_center().label
@@ -63,13 +39,11 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
         positions = [p.position for p in aux]
         charges = [p.q for p in aux]
         rigid.set_param(center_label, types=types,
-                        positions=positions,
-                        charges=charges)
-
+                        positions=positions, charges=charges)
     rigid.create_bodies()
 
 
-    # --- Interactions
+    # Interactions
     nl = hoomd.md.nlist.cell()
     lj = hoomd.md.pair.lj(r_cut=6, nlist=nl)
 
@@ -78,12 +52,13 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
                           epsilon=i.epsilon, sigma=i.sigma, alpha=i.alpha)
 
 
-    # --- PPPM
+    # PPPM
     pppm = hoomd.md.charge.pppm(hoomd.group.charged(), nlist=nl)
     pppm.set_params(Nx=64, Ny=64, Nz=64, order=4, rcut=6, alpha=0)
 
 
-    # --- Integrator
+
+    # Integrator
     hoomd.md.integrate.mode_standard(dt=sim.dt)
     rigid_group = hoomd.group.rigid_center()
     sim_group = rigid_group
@@ -96,7 +71,7 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
                                              kT=sim.kT, seed=sim.seed)
 
 
-    # --- Logging
+    # Logging
     quantities = ["potential_energy", "translational_kinetic_energy",
                   "rotational_kinetic_energy"]
     hoomd.analyze.log(filename=sim.log_file,
@@ -108,5 +83,6 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
                    group=hoomd.group.all(),
                    overwrite=overwrite)
 
-    # --- Run
+
+    # Run simulation
     hoomd.run(sim.duration)

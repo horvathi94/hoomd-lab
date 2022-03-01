@@ -1,0 +1,11 @@
+# Continue simulation from same parameters as the original file
+action: continue
+
+# Run which should be continued and the frame from which to start:
+base:
+  file: test-v2_20220221_141405.yaml
+  frame: -1
+
+# Specify duration of new run (duration is mandatory):
+simulation:
+  duration: 1e5

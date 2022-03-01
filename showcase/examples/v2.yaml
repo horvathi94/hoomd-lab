@@ -1,0 +1,102 @@
+project_name: test-v2
+
+
+particles:
+  - A:
+      q: 18
+  - B:
+      q: 0
+  - C:
+      q: -3
+  - D:
+      q: 0
+
+
+rigidbodies:
+  - V:
+    - A:
+        position: [0, 0, 0]
+        is_center: true
+    - B:
+        position: [-1, 0, 0]
+    - B:
+        position: [ 1, 0, 0]
+  - H:
+    - D:
+        position: [0, 0, 0]
+        is_center: true
+    - C:
+        position: [0, 0, -1.5]
+    - C:
+        position: [0, 0, 1.5]
+
+
+box:
+  Lx: 30
+  Ly: 30
+  Lz: 30
+
+
+interactions:
+  - A: 
+      with: [A]
+      epsilon: 0
+      sigma: 1
+      alpha: 0
+  - A: 
+      with: [B]
+      epsilon: 1e6
+      sigma: 1
+      alpha: 0
+  - A: 
+      with: [C]
+      epsilon: 1
+      sigma: 1
+      alpha: 0
+  - A: 
+      with: [D]
+      epsilon: 1e5
+      sigma: 1
+      alpha: 0
+  - B:
+      with: [B]
+      epsilon: 1e5
+      sigma: 1
+      alpha: 0
+  - B:
+      with: [C]
+      epsilon: 10
+      sigma: 1
+      alpha: 0
+  - B:
+      with: [D]
+      epsilon: 1e6
+      sigma: 1
+      alpha: 0
+  - C:
+      with: [C]
+      epsilon: 0
+      sigma: 1
+      alpha: 0
+  - C:
+      with: [D]
+      epsilon: 1e5
+      sigma: 1
+      alpha: 0
+  - D:
+      with: [D]
+      epsilon: 1e5
+      sigma: 1
+      alpha: 0
+
+
+
+simulation:
+  rigidbodies:
+    - V: 7
+    - H: 21
+  kT: 0.05
+  dt: 0.01
+  seed: 42
+  period: 1e3
+  duration: 1e4

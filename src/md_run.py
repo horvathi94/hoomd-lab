@@ -14,6 +14,7 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
     Parser.write(sim, sim.project_file)
     log.log_current_file(sim.project_file, gpu)
 
+
     # Init context
     np.random.seed(sim.seed)
     hoomd.context.initialize(f"--gpu={gpu}")
@@ -21,17 +22,16 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
 
     # Create snapshot
     box = hoomd.data.boxdim(Lx=sim.box.Lx, Ly=sim.box.Ly, Lz=sim.box.Lz)
-    snapshot = hoomd.data.make_snapshot(N=sim.count_center_particles(),
-                                        box=box)
-
-    types_list = [p.label for p in sim.list_unique_particles()]
-    snapshot.particles.types = types_list
+#    snapshot = hoomd.data.make_snapshot(N=sim.count_center_particles(),
+#                                        box=box)
+    snapshot = hoomd.data.make_snapshot(N=sim.N, box=box)
+    snapshot.particles.types = sim.types_list
 
 
     # --- Add particles:
     for i, rb in enumerate(sim.list_rigidbodies()):
         p = rb.get_center()
-        snapshot.particles.typeid[i] = types_list.index(p.label)
+        snapshot.particles.typeid[i] = sim.types_list.index(p.label)
         snapshot.particles.charge[i] = p.q
         snapshot.particles.orientation[i] = utils.random_quaternion()
         snapshot.particles.diameter[i] = p.diam
@@ -39,6 +39,16 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
         utils.place_particle(snapshot, i,
                              fixed_position=rb.fixed_position, dmin=4.)
 
+
+    # --- Add solvent:
+    for j, sol in enumerate(sim.list_solvents()):
+        indx = i + j + 1
+        snapshot.particles.typeid[indx] = sim.types_list.index(sol.label)
+        snapshot.particles.charge[i] = sol.q
+        snapshot.particles.orientation[i] = utils.random_quaternion()
+        snapshot.particles.diameter[i] = sol.diam
+        snapshot.particles.moment_inertia[i] = [1, 1, 1]
+        utils.place_particle(snapshot, indx, dmin=4.)
 
 
     # Init system
@@ -78,7 +88,13 @@ def run(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
     # --- Integrator
     hoomd.md.integrate.mode_standard(dt=sim.dt)
     rigid_group = hoomd.group.rigid_center()
-    integrator = hoomd.md.integrate.langevin(group=rigid_group,
+    sim_group = rigid_group
+    if sim.has_solvent():
+        for sol in sim.solvents:
+            solvent_group = hoomd.group.type(sol["sol"].label)
+            sim_group = hoomd.group.union(name="rigid_and_solvent",
+                                          a=sim_group, b=solvent_group)
+    integrator = hoomd.md.integrate.langevin(group=sim_group,
                                              kT=sim.kT, seed=sim.seed)
 
 

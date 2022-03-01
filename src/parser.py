@@ -127,6 +127,9 @@ class Parser:
             raise Exception("Missing simulation data.")
         raw = self.data[ykeys.Key.SIMULATION.value]
         rbvals = raw.pop("rigidbodies")
+        solvent_data = []
+        if "solvent" in raw:
+            solvent_data = raw.pop("solvent")
         sim = Simulation(**raw, box=self.read_box(), project=self.project_name)
         for rbval in rbvals:
             label = list(rbval.keys())[0]
@@ -137,6 +140,11 @@ class Parser:
             sim.add_rigidbody(rb, count)
         for i in self.interactions:
             sim.register_interaction(i)
+        for sold in solvent_data:
+            key = list(sold.keys())[0]
+            count = int(float(sold[key]))
+            sol = self.fetch_particle(key)
+            sim.add_solvent(sol, count)
         return sim
 
 

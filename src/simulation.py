@@ -21,6 +21,7 @@ class Simulation:
     box: Box
     path: str = "/hoomd-examples/workdir/new/simulations/"
     rigidbodies: List[dict] = field(default_factory=lambda: [])
+    solvents: List[dict] = field(default_factory=lambda: [])
     interactions: List[Interaction] = field(default_factory=lambda: [])
     timestamp: str = None
     start_from: int = 0
@@ -55,6 +56,10 @@ class Simulation:
         self.rigidbodies.append({"rb": rb, "count": count})
 
 
+    def add_solvent(self, sol: Particle, count: int) -> None:
+        self.solvents.append({"sol": sol, "count": count})
+
+
     def register_interaction(self, i: Interaction) -> None:
         self.interactions.append(i)
 
@@ -62,22 +67,30 @@ class Simulation:
     def list_unique_particles(self) -> List[Particle]:
         unique = []
         for rbdict in self.rigidbodies:
-            rb = rbdict["rb"]
-
-            for p in rb:
-
+            for p in rbdict["rb"]:
                 is_reg = False
-
                 if len(unique) > 0:
                     for up in unique:
                         if p == up:
                             is_reg = True
                             break
-
                 if not is_reg:
                     unique.append(p)
 
+        for sol in self.solvents:
+            unique.append(sol["sol"])
+
         return unique
+
+
+    @property
+    def types_list(self) -> List[str]:
+        return [p.label for p in self.list_unique_particles()]
+
+
+    @property
+    def N(self) -> int:
+        return self.count_center_particles() + self.count_solvents()
 
 
     def list_unique_rigidbodies(self) -> List[RigidBody]:
@@ -99,6 +112,10 @@ class Simulation:
 
     def count_center_particles(self) -> int:
         return sum([rbd["count"] for rbd in self.rigidbodies])
+
+
+    def count_solvents(self) -> int:
+        return sum([sol["count"] for sol in self.solvents])
 
 
     def list_center_particles(self) -> List[Particle]:
@@ -139,6 +156,14 @@ class Simulation:
         for rbd in self.rigidbodies:
             rbs+= [rbd["rb"]]*rbd["count"]
         return rbs
+
+
+    def list_solvents(self) -> List[Particle]:
+        if not self.has_solvent(): return []
+        solvs = []
+        for sold in self.solvents:
+            solvs+= [sold["sol"]]*sold["count"]
+        return solvs
 
 
     def mint(self) -> None:
@@ -213,3 +238,8 @@ class Simulation:
     def is_fork(self) -> bool:
         if self.simtype == SimType.FORK: return True
         return False
+
+
+    def has_solvent(self) -> bool:
+        if self.count_solvents() == 0: return False
+        return True

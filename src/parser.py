@@ -7,8 +7,13 @@ from .particle import Particle
 from .rigidbody import RigidBody
 from .box import Box
 from .interaction import Interaction
-from .simulation import Simulation
+from .simulation import Simulation, SimData
 from . import yaml_keys as ykeys
+
+from .lists import ParticleList, RigidBodyList, InteractionList
+
+
+SIMULATIONS_PATH = "/hoomd-examples/workdir/new/simulations/"
 
 
 
@@ -19,28 +24,35 @@ class Parser:
     simtype: ykeys.SimType = None
     project_name: str = None
     abs_path: str = "/hoomd-examples/workdir/new/"
+    data: dict = None
     box: Box = None
-    particles: List[Particle] = field(default_factory=lambda: [])
-    rigidbodies: List[RigidBody] = field(default_factory=lambda: [])
-    interactions: List[Interaction] = field(default_factory=lambda: [])
+    particles: ParticleList = ParticleList()
+    rigidbodies: RigidBodyList = RigidBodyList()
+    interactions: InteractionList = InteractionList()
     simulation: Simulation = None
 
 
     def __post_init__(self):
-        self.data = self.read_file()
-        self.simtype = self.get_simulation_type()
+        self._read_file()
+        self._read_simtype()
+        self._parse_file()
+        if "forked_from" in self.data:
+            self.forked_from = self.data["forked_from"]
+
+
+    def _parse_file(self):
         if self.simtype is ykeys.SimType.RUN:
             self._read_run()
         elif self.simtype is ykeys.SimType.CONTINUE:
             self._read_continue()
         elif self.simtype is ykeys.SimType.FORK:
             self._read_fork()
+        self.simulation.simtype = self.simtype
 
 
-    def read_file(self) -> dict:
+    def _read_file(self) -> dict:
         with open(self.abs_file, "r") as f:
-            data = yaml.safe_load(f)
-        return data
+            self.data = yaml.safe_load(f)
 
 
     @property
@@ -48,190 +60,152 @@ class Parser:
         return os.path.join(self.abs_path, self.filename)
 
 
-    def get_simulation_type(self) -> ykeys.SimType:
+    def _read_simtype(self) -> None:
+        self.simtype = ykeys.SimType.RUN
         if ykeys.Key.ACTION.value in self.data:
             action = self.data[ykeys.Key.ACTION.value]
-            return ykeys.SimType(action)
-        return ykeys.SimType.RUN
+            self.simtype = ykeys.SimType(action)
 
 
-    def read_box(self) -> Box:
+    def _read_box(self) -> None:
         if ykeys.Key.BOX.value not in self.data:
             raise Exception("Missing box data.")
         raw = self.data[ykeys.Key.BOX.value]
-        return Box(**raw)
+        self.box = Box(**raw)
 
 
-    def read_particles(self) -> list:
+    def _read_particles(self) -> None:
         if ykeys.Key.PARTICLES.value not in self.data:
             raise Exception("Missing particles data.")
         raw = self.data[ykeys.Key.PARTICLES.value]
-        particles = []
         for item in raw:
-           label = list(item.keys())[0]
-           props = list(item.values())[0]
-           p = Particle(label, **props)
-           particles.append(p)
-        return particles
+            label, attrs = list(item.items())[0]
+            p = Particle(label, **attrs)
+            self.particles.add(p)
 
 
-    def fetch_particle(self, label: str) -> Particle:
-        for p in self.particles:
-            if p.label == label: return p
-        raise Exception(f"Particle with label {label} was no found.")
-
-
-    def read_rigidbodies(self) -> list:
+    def _read_rigidbodies(self) -> None:
         if ykeys.Key.RIGIDBODIES.value not in self.data:
             raise Exception("Missing rigid bodies data.")
         raw = self.data[ykeys.Key.RIGIDBODIES.value]
-        rigidbodies = []
         for item in raw:
-            label = list(item.keys())[0]
+            label, ps = list(item.items())[0]
             rb = RigidBody(label)
-            for rawp in list(item.values())[0]:
-                p = self.fetch_particle(list(rawp.keys())[0])
-                props = list(rawp.values())[0]
-                pos = np.asarray(props["position"])
+            for pdata in ps:
+                label, attrs = list(pdata.items())[0]
+                p = self.particles.get(label)
+                pos = np.asarray(attrs["position"])
                 is_center = False
-                if "is_center" in props:
-                    is_center = props["is_center"]
+                if "is_center" in attrs: is_center = attrs["is_center"]
                 rb.add_particle(p, pos, is_center=is_center)
-            rigidbodies.append(rb)
-        return rigidbodies
+            self.rigidbodies.add(rb)
 
 
-    def fetch_rigidbody(self, label: str) -> RigidBody:
-        for rb in self.rigidbodies:
-            if rb.label == label: return rb
-        raise Exception(f"Rigid body with label {label} was not found.")
-
-
-    def read_interactions(self) -> List[Interaction]:
+    def _read_interactions(self) -> None:
         if ykeys.Key.INTERACTIONS.value not in self.data:
             raise Exception("Missing interaction data.")
         raw = self.data[ykeys.Key.INTERACTIONS.value]
-        interactions = []
         for item in raw:
-            p1_label = list(item.keys())[0]
-            idata = list(item.values())[0]
-            others = idata.pop("with")
-            for o in others:
-                i = Interaction(p1_label=p1_label, p2_label=o, **idata)
-                interactions.append(i)
-        return interactions
+            p1_label, attrs = list(item.items())[0]
+            with_ = attrs.pop("with")
+            for other in with_:
+                i = Interaction(p1_label=p1_label, p2_label=other, **attrs)
+                self.interactions.add(i)
 
 
-    def read_simulation(self) -> Simulation:
+
+    def _read_simulation(self) -> None:
         if ykeys.Key.SIMULATION.value not in self.data:
             raise Exception("Missing simulation data.")
         raw = self.data[ykeys.Key.SIMULATION.value]
-        rbvals = raw.pop("rigidbodies")
+        rb_data = raw.pop("rigidbodies")
         solvent_data = []
         if "solvent" in raw:
             solvent_data = raw.pop("solvent")
-        sim = Simulation(**raw, box=self.read_box(), project=self.project_name)
-        for rbval in rbvals:
-            label = list(rbval.keys())[0]
-            count = list(rbval.values())[0]
-            rb = self.fetch_rigidbody(label)
-            if count == 1 and "fixed_position" in rbval:
-                rb.fixed_position = rbval["fixed_position"]
-            sim.add_rigidbody(rb, count)
-        for i in self.interactions:
+        sim = Simulation(**raw, box=self.box, project=self.project_name)
+        for item in rb_data:
+            label, count = list(item.items())[0]
+            rb = self.rigidbodies.get(label)
+            sim.add_rigidbody(rb, int(float(count)))
+        for i in self.interactions._items:
             sim.register_interaction(i)
-        for sold in solvent_data:
-            key = list(sold.keys())[0]
-            count = int(float(sold[key]))
-            sol = self.fetch_particle(key)
-            sim.add_solvent(sol, count)
-        return sim
+        for item in solvent_data:
+            label, count = list(item.items())[0]
+            sol = self.particles.get(label)
+            sim.add_solvent(sol, int(float(count)))
+
+        if ykeys.Key.FORKED_FROM in raw:
+            fd = raw[ykeys.Key.FORKED_FROM]
+            print(fd)
+
+        self.simulation = sim
 
 
-    def read_project_name(self) -> str:
+    def _read_project_name(self) -> None:
+        self.project_name = None
         if ykeys.Key.PROJECT_NAME.value in self.data:
-            return self.data[ykeys.Key.PROJECT_NAME.value]
-        return None
+            self.project_name = self.data[ykeys.Key.PROJECT_NAME.value]
+
+
+    def _read_forked_from(self) -> None:
+        if ykeys.Key.FORKED_FROM.value in self.data:
+            forked_from = self.data[ykeys.Key.FORKED_FROM.value]
+            self.simulation.forked_from = SimData(**forked_from)
 
 
     def _read_run(self) -> None:
-        self.project_name = self.read_project_name()
+        self._read_project_name()
         if self.project_name is None:
-            raise Exception("Missing project name.")
-        self.box = self.read_box()
-        self.particles = self.read_particles()
-        self.rigidbodies = self.read_rigidbodies()
-        self.interactions = self.read_interactions()
-        self.simulation = self.read_simulation()
-        self.simulation.simtype = ykeys.SimType.RUN
+            raise Exception("Project name not found.")
+        self._read_box()
+        self._read_particles()
+        self._read_rigidbodies()
+        self._read_interactions()
+        self._read_simulation()
+        self._read_forked_from()
 
 
-    def read_base_info(self) -> dict:
+    def _read_base_info(self) -> SimData:
         if ykeys.Key.BASE.value not in self.data:
             raise Exception("Missing base data.")
         raw = self.data[ykeys.Key.BASE.value]
         if "file" not in raw:
             raise Exception("Missing base file name.")
-        frame_index = -1 if "frame" not in raw else int(raw["frame"])
-        return {"file": raw["file"], "frame_index": frame_index}
-
-
-    @classmethod
-    def _read_base(self, fname: str) -> "Parser":
-        return Parser(fname,
-                      abs_path="/hoomd-examples/workdir/new/simulations/")
+        return SimData(**raw)
 
 
     def _read_continue(self) -> None:
-        base_info = self.read_base_info()
-        base = self._read_base(base_info["file"])
-        self.project_name = self.read_project_name()
-        if self.project_name is None: self.project_name = base.project_name
-        self.box = base.box
-        self.particles = base.particles
-        self.rigidbodies = base.rigidbodies
-        self.interactions = base.interactions
-        self.simulation = base.simulation
-        self.simulation.project = self.project_name
-        self.simulation.set_frame(base_info["frame_index"])
-#        self.simulation.base["file"] = base.abs_file
         if ykeys.Key.SIMULATION.value not in self.data:
             raise Exception("Missing simulation info.")
         raw = self.data[ykeys.Key.SIMULATION.value]
         if "duration" not in raw:
             raise Exception("Duration is missing.")
-        else:
-            self.simulation.extend_duration(int(float(raw["duration"])))
-        self.simulation.simtype = ykeys.SimType.CONTINUE
-        self.simulation.project_filename = base_info["file"]
 
+        base = self._read_base_info()
+        basep = Parser(base.file, abs_path=SIMULATIONS_PATH)
+        self.project_name = basep.project_name
+        self.simulation = basep.simulation
+        self.simulation.set_continuation_of(base, int(float(raw["duration"])))
 
 
     def _read_fork(self) -> None:
-        base_info = self.read_base_info()
-        base = self._read_base(base_info["file"])
-        self.project_name = self.read_project_name()
-        if self.project_name is None:
-            self.project_name = base.project_name + "_fork"
-        self.box = base.box
-        self.particles = base.particles
-        self.rigidbodies = base.rigidbodies
-        self.interactions = base.interactions
-        self.simulation = base.simulation
-        self.simulation.project = self.project_name
-        self.simulation.set_frame(base_info["frame_index"])
         if ykeys.Key.SIMULATION.value not in self.data:
             raise Exception("Missing simulation info.")
         raw = self.data[ykeys.Key.SIMULATION.value]
         if "duration" not in raw:
             raise Exception("Duration is missing.")
-        else:
-            self.simulation.duration = int(float(raw["duration"]))
+
+        self._read_project_name()
+        if self.project_name is None:
+            raise Exception("Missing project name")
+
+        base = self._read_base_info()
+        basep = Parser(base.file, abs_path=SIMULATIONS_PATH)
+        self.simulation = basep.simulation
+        self.simulation.project = self.project_name
+        self.simulation.set_forked_from(base, int(float(raw["duration"])))
         if "kT" in raw: self.simulation.kT = raw["kT"]
         if "dt" in raw: self.simulation.dt = raw["dt"]
-        self.simulation.simtype = ykeys.SimType.FORK
-        self.simulation.base = base_info
-        self.simulation.base["file"] = base.abs_file
 
 
     @staticmethod
@@ -251,7 +225,10 @@ class Parser:
             doc = yaml.dump(particles, f)
             doc = yaml.dump(rigidbodies, f, default_flow_style=None)
             doc = yaml.dump(box, f)
-            doc = yaml.dump(interactions, f, sort_keys=False)
+            doc = yaml.dump(interactions, f, sort_keys=False,
+                            default_flow_style=None)
             doc = yaml.dump(simulation, f)
-            if sim.is_fork():
-                doc = yaml.dump(sim.fork_data(), f)
+            if sim.forked_from is not None:
+                forked_from = {ykeys.Key.FORKED_FROM.value:
+                               sim.forked_from.as_dict()}
+                doc = yaml.dump(forked_from, f)

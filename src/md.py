@@ -6,9 +6,12 @@ from . import log
 from . import utils
 from .yaml_keys import SimType
 from .snapshot import create_snapshot
+from src.parser import Parser
 
 
 def mdrun(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
+
+#    return
 
     # Write logs
     sim.try_minting()

@@ -19,7 +19,7 @@ class Interaction:
 
     def as_dict(self) -> dict:
         return {self.p1_label:
-            {"with": self.p2_label,
+            {"with": [self.p2_label],
              "epsilon": self.epsilon,
              "sigma": self.sigma,
              "alpha": self.alpha,}

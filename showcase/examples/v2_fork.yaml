@@ -4,11 +4,11 @@ project_name: test-v2-fork
 
 # Run which should be continued and the frame from which to start:
 base: 
-  file: test-v2_20220221_141405.yaml
+  file: test-v2_20220302_145649.yaml
   frame: -1
 
 
 # Parameters for new simulation:
 simulation:
   kT: 0.1
-  duration: 1e5
+  duration: 1e4

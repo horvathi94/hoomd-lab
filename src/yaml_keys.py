@@ -19,3 +19,5 @@ class Key(Enum):
     SIMULATION = "simulation"
     ACTION = "action"
     BASE = "base"
+
+    FORKED_FROM = "forked_from"

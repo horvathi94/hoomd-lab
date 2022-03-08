@@ -53,6 +53,8 @@ def continue_snapshot(sim: Simulation) -> "snapshot":
         raise Exception("Trajectory file was not specified.")
 
     trajectory = gsd.hoomd.open(trajectory_file)
+    print(f"\n\nStart from: {sim.start_from}, trajectory: {len(trajectory)}")
+    exit(0)
     struct0 = trajectory.read_frame(sim.start_from)
 
     N = struct0.particles.N

@@ -10,6 +10,18 @@ from .yaml_keys import SimType
 
 
 @dataclass
+class SimData:
+
+    file: str
+    frame: int = -1
+
+
+    def as_dict(self) -> dict:
+        return {"file": self.file, "frame": self.frame}
+
+
+
+@dataclass
 class Simulation:
 
     project: str
@@ -26,7 +38,10 @@ class Simulation:
     timestamp: str = None
     start_from: int = 0
     simtype: SimType = None
-    base: dict = None
+
+    continuation_of: SimData = None
+    forked_from: SimData = None
+    base_trajectory: str = None
 
 
     def __post_init__(self):
@@ -45,6 +60,22 @@ class Simulation:
         if frame_index > self.duration / self.period:
             raise Exception("Frame is out of bounds.")
         self.start_from = int(frame_index)
+
+
+    def set_continuation_of(self, simd: SimData, dur: int) -> None:
+        self.continuation_of = simd
+        self.set_frame(-1)
+        self.project_filename = simd.file
+        self.extend_duration(dur)
+
+
+    def set_forked_from(self, simd: SimData, dur: int) -> None:
+        self.forked_from = simd
+        self.set_frame(simd.frame)
+        self.base_trajectory = os.path.join(self.path,
+                                self.forked_from.file.replace(".yaml", ".gsd"))
+        self.duration = dur
+        self.forked_from.frame = self.start_from
 
 
     def extend_duration(self, dur: int) -> None:
@@ -170,6 +201,7 @@ class Simulation:
 
 
     def try_minting(self) -> None:
+        print(self.simtype)
         if self.simtype is SimType.RUN or self.simtype is SimType.FORK:
             self.mint()
 
@@ -217,16 +249,12 @@ class Simulation:
         return os.path.join(self.path, self.trajectory_filename)
 
 
+    def set_fork_data(self, fd: dict) -> None:
+        self.forked_from = fd
+
+
     def fork_data(self) -> dict:
-        if self.simtype is not SimType.FORK: return None
-        return {"forked_from": {"file": self.base["file"],
-                                "frame": self.start_from}}
-
-
-    @property
-    def base_trajectory(self) -> str:
-        if self.base is None: return None
-        return self.base["file"].replace(".yaml", ".gsd")
+        return {"forked_from": self.forked_from}
 
 
     def is_run(self) -> bool:
@@ -246,4 +274,9 @@ class Simulation:
 
     def has_solvent(self) -> bool:
         if self.count_solvents() == 0: return False
+        return True
+
+
+    def was_forked(self) -> bool:
+        if self.forked_from is None: return False
         return True

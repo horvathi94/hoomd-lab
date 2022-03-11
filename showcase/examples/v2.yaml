@@ -128,4 +128,4 @@ simulation:
   dt: 0.01
   seed: 42    # Simulation random seed
   period: 1e3
-  duration: 1e4
+  duration: 1e6

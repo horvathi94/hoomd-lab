@@ -34,13 +34,6 @@ def fresh_snapshot(sim: Simulation) -> "snapshot":
     return snapshot
 
 
-
-def is_center(label: str, center_particles: list) -> bool:
-    for p in center_particles:
-        if p.label == label: return True
-    return False
-
-
 def continue_snapshot(sim: Simulation) -> "snapshot":
 
     trajectory_file = None
@@ -53,33 +46,32 @@ def continue_snapshot(sim: Simulation) -> "snapshot":
         raise Exception("Trajectory file was not specified.")
 
     trajectory = gsd.hoomd.open(trajectory_file)
-    print(f"\n\nStart from: {sim.start_from}, trajectory: {len(trajectory)}")
-    exit(0)
+    print(f"\n\nTrajectory: {len(trajectory)}")
+    print(f"Start from: {sim.start_from}")
     struct0 = trajectory.read_frame(sim.start_from)
+#    struct0 = trajectory.read_frame(999)
 
-    N = struct0.particles.N
+
     Lx, Ly, Lz, *_ = struct0.configuration.box
     center_particles = sim.unique_center_particles()
 
-    N = 0
-    for i in range(struct0.particles.N):
-        label = struct0.particles.types[struct0.particles.typeid[i]]
-        if is_center(label, center_particles): N += 1
-
     box = hoomd.data.boxdim(Lx=sim.box.Lx, Ly=sim.box.Ly, Lz=sim.box.Lz)
-    snapshot = hoomd.data.make_snapshot(N=N, box=box)
+    snapshot = hoomd.data.make_snapshot(N=sim.N, box=box)
 
     snapshot.particles.types = struct0.particles.types
-    for i in range(struct0.particles.N):
-        label = struct0.particles.types[struct0.particles.typeid[i]]
-        if not is_center(label, center_particles): continue
-        snapshot.particles.typeid[i] = struct0.particles.typeid[i]
-        snapshot.particles.position[i] = struct0.particles.position[i]
-        snapshot.particles.charge[i] = struct0.particles.charge[i]
-        snapshot.particles.diameter[i] = struct0.particles.diameter[i]
-        snapshot.particles.orientation[i] = struct0.particles.orientation[i]
+
+    i = 0
+    for i0 in range(struct0.particles.N):
+        label = struct0.particles.types[struct0.particles.typeid[i0]]
+        if not sim.check_keep_particle(label): continue
+        snapshot.particles.typeid[i] = struct0.particles.typeid[i0]
+        snapshot.particles.position[i] = struct0.particles.position[i0]
+        snapshot.particles.charge[i] = struct0.particles.charge[i0]
+        snapshot.particles.diameter[i] = struct0.particles.diameter[i0]
+        snapshot.particles.orientation[i] = struct0.particles.orientation[i0]
         snapshot.particles.moment_inertia[i] = \
-            struct0.particles.moment_inertia[i]
+            struct0.particles.moment_inertia[i0]
+        i += 1
 
     return snapshot
 

@@ -3,8 +3,7 @@ action: continue
 
 # Run which should be continued and the frame from which to start:
 base:
-  #  file: test-v2_20220302_145649.yaml
-  file: test-v2-fork_20220308_093635.yaml
+  file: test-v2_20220309_073544.yaml
   frame: -1
 
 # Specify duration of new run (duration is mandatory):

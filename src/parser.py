@@ -227,7 +227,7 @@ class Parser:
             doc = yaml.dump(box, f)
             doc = yaml.dump(interactions, f, sort_keys=False,
                             default_flow_style=None)
-            doc = yaml.dump(simulation, f)
+            doc = yaml.dump(simulation, f, sort_keys=False)
             if sim.forked_from is not None:
                 forked_from = {ykeys.Key.FORKED_FROM.value:
                                sim.forked_from.as_dict()}

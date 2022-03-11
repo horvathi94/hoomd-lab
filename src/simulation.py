@@ -163,7 +163,7 @@ class Simulation:
 
 
     def as_dict(self) -> dict:
-        return {
+        data = {
             "rigidbodies":
                 [{rbd["rb"].label: rbd["count"]} for rbd in self.rigidbodies],
             "kT": self.kT,
@@ -172,6 +172,10 @@ class Simulation:
             "period": self.period,
             "duration": self.duration,
         }
+        if self.has_solvent():
+            data["solvent"] = \
+                    [{sol["sol"].label: sol["count"]} for sol in self.solvents]
+        return data
 
 
 
@@ -201,7 +205,6 @@ class Simulation:
 
 
     def try_minting(self) -> None:
-        print(self.simtype)
         if self.simtype is SimType.RUN or self.simtype is SimType.FORK:
             self.mint()
 
@@ -280,3 +283,23 @@ class Simulation:
     def was_forked(self) -> bool:
         if self.forked_from is None: return False
         return True
+
+
+    @property
+    def keep_particles(self) -> List[str]:
+        labels = [rb["rb"].get_center().label for rb in self.rigidbodies]
+        labels+= [sol["sol"].label for sol in self.solvents]
+        return labels
+
+
+    def check_keep_particle(self, label: str) -> bool:
+        if label in self.keep_particles: return True
+        return False
+
+
+    @property
+    def overwrite(self) -> bool:
+        if self.is_fork(): return True
+        if self.is_run(): return True
+        if self.is_continue(): return False
+        raise Exception("Overwrite not defined.")

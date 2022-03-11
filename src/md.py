@@ -9,9 +9,8 @@ from .snapshot import create_snapshot
 from src.parser import Parser
 
 
-def mdrun(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
+def mdrun(sim: Simulation, gpu: int) -> None:
 
-#    return
 
     # Write logs
     sim.try_minting()
@@ -74,17 +73,18 @@ def mdrun(sim: Simulation, gpu: int, overwrite: bool=True) -> None:
                                              kT=sim.kT, seed=sim.seed)
 
 
+    print(f"\n\nOverwrite: {sim.overwrite}")
     # Logging
     quantities = ["potential_energy", "translational_kinetic_energy",
                   "rotational_kinetic_energy"]
     hoomd.analyze.log(filename=sim.log_file,
                       quantities=quantities,
                       period=sim.period,
-                      overwrite=overwrite)
+                      overwrite=sim.overwrite)
     hoomd.dump.gsd(sim.trajectory_file,
                    period=sim.period,
                    group=hoomd.group.all(),
-                   overwrite=overwrite)
+                   overwrite=sim.overwrite)
 
 
     # Run simulation

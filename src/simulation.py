@@ -42,6 +42,7 @@ class Simulation:
     continuation_of: SimData = None
     forked_from: SimData = None
     base_trajectory: str = None
+    previous_duration: int = 0
 
 
     def __post_init__(self):
@@ -66,7 +67,8 @@ class Simulation:
         self.continuation_of = simd
         self.set_frame(-1)
         self.project_filename = simd.file
-        self.extend_duration(dur)
+        self.previous_duration = self.duration
+        self.duration = dur
 
 
     def set_forked_from(self, simd: SimData, dur: int) -> None:
@@ -76,10 +78,6 @@ class Simulation:
                                 self.forked_from.file.replace(".yaml", ".gsd"))
         self.duration = dur
         self.forked_from.frame = self.start_from
-
-
-    def extend_duration(self, dur: int) -> None:
-        self.duration += dur
 
 
     def add_rigidbody(self, rb: RigidBody, count: int) -> None:
@@ -170,7 +168,7 @@ class Simulation:
             "dt": self.dt,
             "seed": self.seed,
             "period": self.period,
-            "duration": self.duration,
+            "duration": self.total_duration,
         }
         if self.has_solvent():
             data["solvent"] = \
@@ -303,3 +301,8 @@ class Simulation:
         if self.is_run(): return True
         if self.is_continue(): return False
         raise Exception("Overwrite not defined.")
+
+
+    @property
+    def total_duration(self) -> int:
+        return self.previous_duration + self.duration

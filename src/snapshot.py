@@ -46,10 +46,7 @@ def continue_snapshot(sim: Simulation) -> "snapshot":
         raise Exception("Trajectory file was not specified.")
 
     trajectory = gsd.hoomd.open(trajectory_file)
-    print(f"\n\nTrajectory: {len(trajectory)}")
-    print(f"Start from: {sim.start_from}")
     struct0 = trajectory.read_frame(sim.start_from)
-#    struct0 = trajectory.read_frame(999)
 
 
     Lx, Ly, Lz, *_ = struct0.configuration.box

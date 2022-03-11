@@ -73,7 +73,6 @@ def mdrun(sim: Simulation, gpu: int) -> None:
                                              kT=sim.kT, seed=sim.seed)
 
 
-    print(f"\n\nOverwrite: {sim.overwrite}")
     # Logging
     quantities = ["potential_energy", "translational_kinetic_energy",
                   "rotational_kinetic_energy"]

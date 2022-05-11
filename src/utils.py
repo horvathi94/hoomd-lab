@@ -14,7 +14,7 @@ def random_quaternion() -> list:
 
 def place_particle(snap: "Snapshot", placed_particles: int,
                    fixed_position: np.array=None,
-                   dmin: float=0., maxiter: int=1e2) -> None:
+                   dmin: float=0., maxiter: int=1e3) -> None:
     """Place a particle into the Snapshot.
     Give random coordinates if None given."""
 

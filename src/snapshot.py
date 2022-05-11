@@ -18,7 +18,7 @@ def fresh_snapshot(sim: Simulation) -> "snapshot":
         snapshot.particles.diameter[i] = p.diam
         snapshot.particles.moment_inertia[i] = rb.moment_of_inertia
         utils.place_particle(snapshot, i,
-                             fixed_position=rb.fixed_position, dmin=4.)
+                             fixed_position=rb.fixed_position, dmin=5.)
 
 
     # --- Add solvent:

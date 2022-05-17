@@ -19,7 +19,7 @@ What is different in the custom image:
 - Python *dataclasses* package is installed
 - custom scripts are included, which parse the *yaml* files and run the simulations.
 
-Make sure that the *simulations* directory is owned by a user with same uid as the default user of the container (*glotzerlab-software*, uid=1000), otherwise the program will not have permission to write the results to this directory.
+Make sure that the *simulations* directory is owned by a user with same uid as the default user of the container (*glotzerlab-software*, uid=1000), otherwise the program will not have permission to write the results to this directory. The first time, when the `sim.sh` script is started a hidden file is created in the simulations directory *.current_files.txt* make sure that this file is also owned by the afore mentioned user.
 
 
 ## Basic usage

@@ -1,15 +1,17 @@
 #!/bin/bash
 
-GPU_COUNT=6
+############ Run simulations with HOOMD-blue on GPUs ################
+
+GPU_COUNT=`nvidia-smi --list-gpus | wc -l`
 FREE_GPUS=()
 GPU_USAGES=()
-
+CONTAINER_NAME="hoomd-sim"
 
 
 if [[ $1 == "--help" ]] || [[ $1 == "-h" ]]; then
 	echo Main command to run HOOMD simulations from yaml files.
 	echo
-	echo Usage: ./glab.sh [command]
+	echo Usage: ./sim.sh [command]
 	echo 
 	echo Commands:
 	echo  - check   Check GPU usage
@@ -17,6 +19,13 @@ if [[ $1 == "--help" ]] || [[ $1 == "-h" ]]; then
 	echo
 	echo Note: the simulated project names are written to current_files.txt.
 fi
+
+
+if [[ $GPU_COUNT -lt 1 ]]; then
+	echo NVIDIA GPU required to run simulations, but none were detected on the system.
+	exit 5
+fi
+
 
 
 function check_gpus() {
@@ -45,11 +54,17 @@ function check_gpus() {
 
 		for (( i=0; i<GPU_COUNT; i++ ));
 		do
-			if [ "${GPU_USAGES[$i]}" == 0 ]; then
-				echo GPU $i usage: ${GPU_USAGES[$i]}%, finished: `basename ${current_files[$i]}`
-			else 
-				echo GPU $i usage: ${GPU_USAGES[$i]}%, working on: `basename ${current_files[$i]}`
+			
+			fname="File name was not found in current_files.txt"
+			if [[ ! -z ${current_files[$i]} ]]; then
+				fname=`basename ${current_files[$i]}`
 			fi
+
+			status_msg="working on"
+			if [ "${GPU_USAGES[$i]}" == 0 ]; then
+				status_msg="finished"
+			fi
+			echo GPU $i usage: ${GPU_USAGES[$i]}%, $status_msg: $fname
 		done
 	
 	fi
@@ -105,8 +120,8 @@ if [[ $1 == "run" ]]; then
 
 
 	docker exec -i \
-		hoomd_glotzerlab_1 \
-		bash -c "python3 new/main.py $1 $gpu"
+		$CONTAINER_NAME \
+		bash -c "python3 ./main.py $1 $gpu"
 
 	exit 0
 

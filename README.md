@@ -1,18 +1,29 @@
 # HOOMD-lab 
 
-Run simulations on HOOM-blue [[1]](#1) trough the use of *yaml* files. 
+Run molecular dynamics simulations with HOOM-blue [[1]](#1) on GPUs, specifying parameters with the use of custom *yaml* files. 
+
+Requires:
+- NVIDIA GPU with working drivers
+- Docker installed and working
+- Docker NVIDIA runtime (check this site for more info: https://github.com/NVIDIA/nvidia-docker)
+
+The scripts were designed to run on Linux systems.
 
 
-## Create Docker image
+## Deploying the Docker container
 
-The customized version of the HOOMD-blue Docker can be created from the *Dockerfile* in the project, using the `docker build` command. Extras in this image:
+The custom version of the HOOMD-blue Docker image can be created from the *Dockerfile*. This can easily be done with the `container.sh` shell script. If it is the first time you are using this project and do not have the *hoomd-lab* Docker image run: `./container.sh build` command to build the *hoomd-lab* image from the Dockerfile, create the required simulations directory and run the Docker container.
+
+What is different in the custom image:
 - a group named *hoomd* is added with GID=1011 (change this in line 4)
 - Python *dataclasses* package is installed
+- custom scripts are included, which parse the *yaml* files and run the simulations.
 
 
-## Usage
 
-After deploying the container use the `glab.sh` script to interact with it. There are two main commands:
+## Basic usage
+
+After deploying the container use the `sim.sh` script to interact with it. There are two main commands:
 - **check**: show GPU usages of the system
 - **run**: run simulaitons from the specified *yaml* file
 

@@ -6,7 +6,7 @@ GPU_COUNT=`nvidia-smi --list-gpus | wc -l`
 FREE_GPUS=()
 GPU_USAGES=()
 CONTAINER_NAME="hoomd-sim"
-CURRENT_FILES="./simulations/current_files.txt"
+CURRENT_FILES="./simulations/.current_files.txt"
 
 
 if [[ $1 == "--help" ]] || [[ $1 == "-h" ]]; then
@@ -27,6 +27,14 @@ if [[ $GPU_COUNT -lt 1 ]]; then
 	exit 5
 fi
 
+
+if [ ! -e $CURRENT_FILES ]; then
+	touch $CURRENT_FILES
+	for (( i=1; i<=$GPU_COUNT; i++ ));
+	do
+		echo -n "," >> $CURRENT_FILES
+	done
+fi
 
 
 function check_gpus() {

@@ -15,7 +15,7 @@ The scripts were designed to run on Linux systems.
 The custom version of the HOOMD-blue Docker image can be created from the *Dockerfile*. This can easily be done with the `container.sh` shell script. If it is the first time you are using this project and do not have the *hoomd-lab* Docker image run: `./container.sh build` command to build the *hoomd-lab* image from the Dockerfile, create the required simulations directory and run the Docker container.
 
 What is different in the custom image:
-- a group named *hoomd* is added with GID=1011 (change this in line 4)
+- a group named *hoomd* is added with GID=1011 (change this in line 5 of the `container.sh` script)
 - Python *dataclasses* package is installed
 - custom scripts are included, which parse the *yaml* files and run the simulations.
 

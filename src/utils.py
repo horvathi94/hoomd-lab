@@ -3,7 +3,7 @@ import numpy as np
 
 BASE_DIR = "/hoomd-examples/workdir"
 SIMULATIONS_DIR = os.path.join(BASE_DIR, "simulations")
-LOG_FILE = os.path.join(SIMULATIONS_DIR, "current_files.txt")
+LOG_FILE = os.path.join(SIMULATIONS_DIR, ".current_files.txt")
 
 
 def random_quaternion() -> list:

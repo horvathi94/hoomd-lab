@@ -7,13 +7,15 @@ ARG HOOMD_GID=${HOOMD_GID}
 USER root
 RUN groupadd hoomd --gid ${HOOMD_GID}
 RUN pip3 install dataclasses
+RUN mkdir -p /hoomd-examples/workdir \
+	&& chown -R glotzerlab-software:hoomd /hoomd-examples/workdir
 USER glotzerlab-software
 
 #RUN export LC_ALL=C.UTF-8
 #RUN export LANG=C.UTF-8
 
 WORKDIR /hoomd-examples/workdir
-COPY ./src /hoomd-examples/workdir
+COPY ./src /hoomd-examples/workdir/src
 COPY ./main.py /hoomd-examples/workdir
 
 

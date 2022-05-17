@@ -9,12 +9,8 @@ from .box import Box
 from .interaction import Interaction
 from .simulation import Simulation, SimData
 from . import yaml_keys as ykeys
-
+from .utils import BASE_DIR
 from .lists import ParticleList, RigidBodyList, InteractionList
-
-
-SIMULATIONS_PATH = "/hoomd-examples/workdir/new/simulations/"
-
 
 
 @dataclass
@@ -23,7 +19,7 @@ class Parser:
     filename: str
     simtype: ykeys.SimType = None
     project_name: str = None
-    abs_path: str = "/hoomd-examples/workdir/new/"
+    abs_path: str = BASE_DIR
     data: dict = None
     box: Box = None
     particles: ParticleList = ParticleList()

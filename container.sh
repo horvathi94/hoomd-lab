@@ -36,11 +36,6 @@ mkdir -p simulations
 echo Spinning up container...
 docker run -d \
 	--name $CONTAINER_NAME \
-	--volume simulations:/hoomd-examples/workdir/simulations \
+	--mount type=bind,source="$(pwd)"/simulations,target=/hoomd-examples/workdir/simulations \
+	--mount type=bind,source="$(pwd)"/input,target=/hoomd-examples/workdir/input \
 	$IMAGE_NAME
-
-
-
-
-
-

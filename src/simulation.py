@@ -7,6 +7,7 @@ from .particle import Particle
 from .interaction import Interaction
 from .box import Box
 from .yaml_keys import SimType
+from .utils import SIMULATIONS_DIR
 
 
 @dataclass
@@ -31,7 +32,7 @@ class Simulation:
     duration: int
     seed: int
     box: Box
-    path: str = "/hoomd-examples/workdir/new/simulations/"
+    path: str = SIMULATIONS_DIR
     rigidbodies: List[dict] = field(default_factory=lambda: [])
     solvents: List[dict] = field(default_factory=lambda: [])
     interactions: List[Interaction] = field(default_factory=lambda: [])

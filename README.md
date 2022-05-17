@@ -19,6 +19,7 @@ What is different in the custom image:
 - Python *dataclasses* package is installed
 - custom scripts are included, which parse the *yaml* files and run the simulations.
 
+Make sure that the *simulations* directory is owned by a user with same uid as the default user of the container (*glotzerlab-software*, uid=1000), otherwise the program will not have permission to write the results to this directory.
 
 
 ## Basic usage

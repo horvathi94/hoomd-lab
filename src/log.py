@@ -1,4 +1,4 @@
-LOG_FILE = "/hoomd-examples/workdir/new/current_files.txt"
+from .utils import LOG_FILE
 
 def log_current_file(fname: str, gpu: int) -> None:
 

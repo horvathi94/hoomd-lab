@@ -60,5 +60,6 @@ The MD simulations are run roughly by:
 
 <a id="1">[1]</a>
 J. A. Anderson, J. Glaser, and S. C. Glotzer. HOOMD-blue: A Python package for high-performance molecular dynamics and hard particle Monte Carlo simulations. Computational Materials Science 173: 109363, Feb 2020. 10.1016/j.commatsci.2019.109363
+  
 <a id="2">[2]</a>
 D. N. LeBard, B. G. Levine, P. Mertmann, S. A. Barr, A. Jusufi, S. Sanders, M. L. Klein, and A. Z. Panagiotopoulos. Self-assembly of coarse-grained ionic surfactants accelerated by graphics processing units. Soft Matter 8: 2385-2397, 2012. 10.1039/c1sm06787g

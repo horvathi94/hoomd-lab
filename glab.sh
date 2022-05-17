@@ -7,13 +7,15 @@ GPU_USAGES=()
 
 
 if [[ $1 == "--help" ]] || [[ $1 == "-h" ]]; then
-	echo Main command to run HOOMD simulations.
+	echo Main command to run HOOMD simulations from yaml files.
 	echo
 	echo Usage: ./glab.sh [command]
 	echo 
 	echo Commands:
-	echo  - check	Check GPU usage
-	echo  - run		Run simulation
+	echo  - check   Check GPU usage
+	echo  - run     Run simulation
+	echo
+	echo Note: the simulated project names are written to current_files.txt.
 fi
 
 
@@ -25,8 +27,8 @@ function check_gpus() {
 		echo Usage: ./glab.sh check [commnad]
 		echo 
 		echo Commands:
-		echo  - all			 	List all info
-		echo  - finished	List finsihed tasks
+		echo  - all       List all info
+		echo  - finished  List finsihed tasks
 	fi
 
 

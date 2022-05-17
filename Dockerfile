@@ -13,9 +13,8 @@ USER glotzerlab-software
 #RUN export LANG=C.UTF-8
 
 WORKDIR /hoomd-examples/workdir
-#COPY ./src /hoomd-examples/workdir
-#COPY ./main.py /hoomd-examples/workdir
-#COPY 
+COPY ./src /hoomd-examples/workdir
+COPY ./main.py /hoomd-examples/workdir
 
 
 CMD ["jupyter", "notebook", "--port", "8888", "--ip", "0.0.0.0", "--no-browser", "/hoomd-examples/workdir"]

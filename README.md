@@ -1,6 +1,6 @@
 # HOOMD-lab 
 
-Run molecular dynamics simulations with HOOM-blue [[1]](#1) on GPUs, specifying parameters with the use of custom *yaml* files. 
+Run molecular dynamics simulations with HOOMD-blue [[1]](#1) on GPUs, specifying parameters with the use of custom *yaml* files. 
 
 Requires:
 - NVIDIA GPU with working drivers
